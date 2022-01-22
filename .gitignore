@@ -13,6 +13,8 @@
 *.html
 *.pdf
 *.log
+*.gz
+*.rds
 # folders
 #**/input
 #**/output
