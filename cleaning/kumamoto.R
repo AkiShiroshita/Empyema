@@ -154,7 +154,9 @@ lab_toal <- lab %>%
 
 # closest date before or after, but no more than 2 days prior to index
 
-select_lab <- function(lab_name){
+lab_combine <- key
+
+select_lab <- function(lab_name, new_name){
   lab <- lab_toal %>% 
     filter(name == lab_name)
   index1 <- neardate(lab_key$id,
@@ -173,32 +175,32 @@ select_lab <- function(lab_name){
               ifelse(abs(ymd(lab$date[index2]) - ymd(lab_key$diag_date)) <
                        abs(ymd(lab$date[index1])- ymd(lab_key$diag_date)), index2, index1)))
   lab <- lab[index3, ]
-  return(lab)
+  lab <- lab %>% filter(!is.na(value)) %>% 
+    distinct(id, adm_date, .keep_all=TRUE) %>%  
+    select(-label, -name, -date)
+  names(lab)[which(names(lab)=="value" ) ] <- new_name
+  lab_combine <<- left_join(lab_combine, lab, key = c("id", "adm"))
 }
 
-lab <- lab %>% 
-  filter(!is.na(value)) %>% 
-  select(id, adm_date, diag_date, name, value) %>% 
-  pivot_wider(names_from = name,
-              values_from = value) %>% 
-  rename(blood_wbc = "白血球数",
-         blood_neutro = "胸-好中球",
-         blood_hb = "ヘモグロビン",
-         blood_tp = "総蛋白 (TP)", 
-         blood_alb = "アルブミン (ALB)",
-         blood_ldh = "胸-LD（LDH）",
-         blood_bun = "血中尿素窒素 (BUN)",
-         blood_cre = "クレアチニン (CRE)",
-         blood_crp = "CRP",
-         blood_alp = "ｱﾙｶﾘﾌｫｽﾌｧﾀｰｾﾞ（ALP）",
-         pleural_pH = "胸-pH",
-         pleural_ldh = "胸-LD（LDH）",
-         pleural_tp = "胸-蛋白定量 (TP)",
-         pleural_alb = "胸-アルブミン (ALB)",
-         pleural_glucose = "血糖 （グルコース）",
-         pleural_neutro = "胸-好中球",
-         pleural_cell = "胸-細胞数",
-         pleural_lymph = "胸-リンパ球",
-         pleural_eosino = "胸-好酸球",
-         pleural_macro = "胸-組織球") %>% 
-  select(start_with("blood","pleural"))
+select_lab("白血球数", "blood_wbc")
+select_lab("胸-好中球", "blood_neutro")
+select_lab("ヘモグロビン", "blood_hb")
+select_lab("総蛋白 (TP)", "blood_tp")
+select_lab("アルブミン (ALB)", "blood_alb")
+select_lab("胸-LD（LDH）", "blood_ldh")
+select_lab("血中尿素窒素 (BUN)", "blood_bun")
+select_lab("クレアチニン (CRE)", "blood_cre")
+select_lab("CRP", "blood_crp")
+select_lab("ｱﾙｶﾘﾌｫｽﾌｧﾀｰｾﾞ（ALP）" ," blood_alp")
+select_lab("胸-pH", "pleural_pH")
+select_lab("胸-LD（LDH）", "pleural_ldh")
+select_lab("胸-蛋白定量 (TP)", "pleural_tp")
+select_lab("胸-アルブミン (ALB)", "pleural_alb")
+select_lab("血糖 （グルコース）", "pleural_glucose")
+select_lab("胸-好中球", "pleural_neutro")
+select_lab("胸-細胞数", "pleural_cell")
+select_lab("胸-リンパ球", "pleural_lymph")
+select_lab("胸-好酸球", "pleural_eosino")
+select_lab("胸-組織球", "pleural_macro")
+
+lab_combine
