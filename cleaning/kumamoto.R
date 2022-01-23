@@ -1,3 +1,4 @@
+
 # Data import -------------------------------------------------------------
 
 dpc <- read_excel("data/kumamoto/uncleaned/kumamoto_dpcdwh.xlsx",
