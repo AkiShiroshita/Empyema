@@ -16,49 +16,12 @@ chart %>% colnames()
 chart <- chart %>% 
   filter(電子カルテでの膿胸の診断 == "膿胸") %>% 
   mutate(hospid = 3) %>% 
-  rename(id = "ID",
-         adm_date = "入院年月日",
-         dev_place = "発症場所",
-         diag_date = "膿胸診断日（推定）",
-         last_date = "最終安否確認日",
-         last_condition = "最終安否",
-         fever = "発熱",
-         cough = "咳嗽",
-         sputum = "喀痰",
-         chest_pain = "胸痛",
-         weight_loss = "体重減少",
-         surgery_3m = "入院前3ヶ月以内の外科手術",
-         damage_3m = "入院前3ヶ月以内の胸部外傷歴",
-         hot = "在宅酸素",
-         hot_ryou_ansei = "在宅酸素安静時流量",
-         hot_ryou_rousa = "在宅酸素労作時流量",
-         pleural_look = "胸水肉眼所見",
-         sbp = "診断日収縮期血圧",
-         dbp = "診断日拡張期血圧",
-         hr = "診断日脈拍",
-         rr = "診断日呼吸数",
-         spo2 = "診断日Spo2",
-         o2 = "診断日酸素投与量"
-  ) %>% 
-  select(-3, -4) %>% 
-  mutate(adm_date = ymd(adm_date),
-         diag_date= ymd(diag_date)) %>% 
-  mutate(dev_place = case_when(dev_place == "市中発症" ~ 0,
-                               dev_place == "院内発症" ~ 1,
-                               dev_place == "不明" ~ 2),
-         last_condition = if_else(last_condition == "生存", 0, 1),
-         fever = if_else(fever == "なし", 0, 1),
-         cough = if_else(cough == "なし", 0, 1),
-         sputum = if_else(sputum == "なし", 0, 1),
-         chest_pain = if_else(chest_pain == "なし", 0, 1),
-         weight_loss = if_else(weight_loss == "なし", 0, 1),
-         surgery_3m = if_else(surgery_3m == "なし", 0, 1),
-         damage_3m = if_else(damage_3m == "なし", 0, 1),
-         hot = if_else(hot == "なし", 0, 1),
-         pleural_look = case_when(dev_place == "膿性でない" ~ 0,
-                                  dev_place == "膿性" ~ 1,
-                                  dev_place == "不明" ~ 2)) %>% 
-  mutate_all(.funs = ~ as.character(.)) 
+  rename(id = "ID")
+
+chart_clean(chart)
+chart <- chart %>% 
+  replace_na(replace = list(pleural_look = 2))
+
 key <- chart %>% 
   select(id, adm_date, diag_date)
 
@@ -121,6 +84,7 @@ select_lab("ＵＮ", "blood_bun")
 select_lab("ＣＲＥ", "blood_cre")
 select_lab("ＣＲＰ", "blood_crp")
 select_lab("ＡＬＰ" ,"blood_alp")
+select_lab("　Ｇｌｕ","blood_glucose")
 select_lab("ｐＨ(胸水)", "pleural_pH")
 select_lab("ＬＤＨ(胸水)", "pleural_ldh")
 select_lab("ＬＤＨ(穿刺液他)", "pleural_ldh1")
@@ -189,7 +153,7 @@ select_lab("LD", "静脈血", "blood_ldh2")
 select_lab("UN", "静脈血", "blood_bun2")
 select_lab("CRE", "静脈血", "blood_cre2")
 select_lab("CRP", "静脈血", "blood_crp2")
-select_lab("ALP" ,"静脈血", " blood_alp2")
+select_lab("ALP" ,"静脈血", "blood_alp2")
 select_lab("Glu", "静脈血", "blood_glucose2")
 select_lab("ALP", "静脈血", "blood_alp2")
 select_lab("pH(胸水)", "胸水", "pleural_pH2")
@@ -197,10 +161,14 @@ select_lab("LDH胸水", "胸水", "pleural_ldh2")
 select_lab("蛋白定量(胸水)", "胸水", "pleural_tp2")
 select_lab("ALB(胸水)", "胸水", "pleural_alb2")
 select_lab("GLU胸水", "胸水", "pleural_glucose2")
-select_lab("好中球", "胸水", "pleural_neutro2")
-select_lab("ﾘﾝﾊﾟ球", "胸水", "pleural_lymph2")
-select_lab("好酸球", "胸水", "pleural_eosino2")
-select_lab("組織球", "胸水", "pleural_macro2")
+select_lab("好中球", "胸水", "pleural_neutro")
+select_lab("ﾘﾝﾊﾟ球", "胸水", "pleural_lymph")
+select_lab("好酸球", "胸水", "pleural_eosino")
+select_lab("組織球", "胸水", "pleural_macro")
+
+lab_combine <- mutate_all(lab_combine, ~str_replace(.,pattern="検査不能",replacement = "NA"))
+lab_combine <- mutate_all(lab_combine, ~str_replace(.,pattern="検査中止",replacement = "NA"))
+lab_combine <- mutate_all(lab_combine, ~str_replace(.,pattern="- ＊ -",replacement = "NA"))
 
 combine_func <- function(name){
   name <- enquo(name)
@@ -225,3 +193,4 @@ combine_func("pleural_ldh")
 combine_func("pleural_tp")
 combine_func("pleural_alb")
 combine_func("pleural_glucose")
+

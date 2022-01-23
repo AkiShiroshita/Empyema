@@ -33,6 +33,8 @@ usethis::git_sitrep()
 usethis::create_github_token()
 gitcreds::gitcreds_set()
 
+source(here("cleaning","chart_clean.R"))
+
 # Ichinomiya --------------------------------------------------------------
 
 file.edit("cleaning/ichinomiya.R")
@@ -54,5 +56,5 @@ file.edit("cleaning/kumamoto.R")
 rm(list=ls())
 
 #file.edit("xxx")
-#source(here("cleaning","xxx.R"))
+
 #load(here("statistical_analysis","xxx.R"))

@@ -23,49 +23,13 @@ chart %>% colnames()
 chart <- chart %>% 
   filter(電子カルテでの膿胸の診断 == "膿胸") %>% 
   mutate(hospid = 5) %>% 
-  rename(id = "匿名化ID",
-         adm_date = "入院年月日",
-         dev_place = "発症場所",
-         diag_date = "膿胸診断日（推定）",
-         last_date = "最終安否確認日",
-         last_condition = "最終安否",
-         fever = "発熱",
-         cough = "咳嗽",
-         sputum = "喀痰",
-         chest_pain = "胸痛",
-         weight_loss = "体重減少",
-         surgery_3m = "入院前3ヶ月以内の外科手術",
-         damage_3m = "入院前3ヶ月以内の胸部外傷歴",
-         hot = "在宅酸素",
-         hot_ryou_ansei = "在宅酸素安静時流量",
-         hot_ryou_rousa = "在宅酸素労作時流量",
-         pleural_look = "胸水肉眼所見",
-         sbp = "診断日収縮期血圧",
-         dbp = "診断日拡張期血圧",
-         hr = "診断日脈拍",
-         rr = "診断日呼吸数",
-         spo2 = "診断日Spo2",
-         o2 = "診断日酸素投与量"
-         ) %>% 
-  select(-3, -4) %>% 
-  mutate(adm_date = ymd(adm_date),
-         diag_date= ymd(diag_date)) %>% 
-  mutate(dev_place = case_when(dev_place == "市中発症" ~ 0,
-                               dev_place == "院内発症" ~ 1,
-                               dev_place == "不明" ~ 2),
-         last_condition = if_else(last_condition == "生存", 0, 1),
-         fever = if_else(fever == "なし", 0, 1),
-         cough = if_else(cough == "なし", 0, 1),
-         sputum = if_else(sputum == "なし", 0, 1),
-         chest_pain = if_else(chest_pain == "なし", 0, 1),
-         weight_loss = if_else(weight_loss == "なし", 0, 1),
-         surgery_3m = if_else(surgery_3m == "なし", 0, 1),
-         damage_3m = if_else(damage_3m == "なし", 0, 1),
-         hot = if_else(hot == "なし", 0, 1),
-         pleural_look = case_when(dev_place == "膿性でない" ~ 0,
-                                  dev_place == "膿性" ~ 1,
-                                  dev_place == "不明" ~ 2)) %>% 
-  mutate_all(.funs = ~ as.character(.)) 
+  rename(id = "匿名化ID") 
+
+chart_clean(chart)
+
+chart <- chart %>% 
+  replace_na(replace = list(pleural_look = 2))
+
 key <- chart %>% 
   select(id, adm_date, diag_date)
 
@@ -129,6 +93,7 @@ lab_key <- lab %>%
   select(id, adm_date, diag_date)
   
 unique(lab$name)
+
 lab_toal <- lab %>% 
   filter(name == "総蛋白 (TP)" | 
            name == "アルブミン (ALB)"|
@@ -178,7 +143,6 @@ select_lab <- function(lab_name, new_name){
   lab <- lab %>% filter(!is.na(value)) %>% 
     distinct(id, adm_date, .keep_all=TRUE) %>%  
     select(-label, -name, -date)
-  new_name <- enquo(new_name)
   names(lab)[which(names(lab)=="value" ) ] <- new_name
   lab_combine <<- left_join(lab_combine, lab, key = c("id", "adm"))
 }
@@ -192,7 +156,7 @@ select_lab("LD (LDH)", "blood_ldh")
 select_lab("血中尿素窒素 (BUN)", "blood_bun")
 select_lab("クレアチニン (CRE)", "blood_cre")
 select_lab("CRP", "blood_crp")
-select_lab("ｱﾙｶﾘﾌｫｽﾌｧﾀｰｾﾞ（ALP）" ," blood_alp")
+select_lab("ｱﾙｶﾘﾌｫｽﾌｧﾀｰｾﾞ（ALP）" ,"blood_alp")
 select_lab("血糖 （グルコース）", "pleural_glucose")
 select_lab("胸-pH", "pleural_pH")
 select_lab("胸-LD（LDH）", "pleural_ldh")
@@ -206,6 +170,9 @@ select_lab("胸-好酸球", "pleural_eosino")
 select_lab("胸-組織球", "pleural_macro")
 
 lab_combine %>% glimpse()
+
+lab_combine <- lab_combine %>% 
+  mutate(blood_wbc = as.character(as.numeric(blood_wbc)*1000)) 
 
 # Culture -----------------------------------------------------------------
 
@@ -225,7 +192,9 @@ pleural_culture <- culture %>%
 
 culture_combine <- left_join(key, pleural_culture, key = c("id", "adm_date")) %>% 
   select(id, adm_date, diag_date, 採取日時, 菌名) %>% 
-  pivot_wider(names_from = 菌名,
-              values_from = 菌名)
+  drop_na() %>% 
+  group_by(id, adm_date) %>% 
+  slice(1) %>% 
+  ungroup()
 
 culture_combine
