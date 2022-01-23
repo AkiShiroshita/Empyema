@@ -178,29 +178,54 @@ select_lab <- function(lab_name, new_name){
   lab <- lab %>% filter(!is.na(value)) %>% 
     distinct(id, adm_date, .keep_all=TRUE) %>%  
     select(-label, -name, -date)
+  new_name <- enquo(new_name)
   names(lab)[which(names(lab)=="value" ) ] <- new_name
   lab_combine <<- left_join(lab_combine, lab, key = c("id", "adm"))
 }
 
 select_lab("白血球数", "blood_wbc")
-select_lab("胸-好中球", "blood_neutro")
+select_lab("好中球数", "blood_neutro")
 select_lab("ヘモグロビン", "blood_hb")
 select_lab("総蛋白 (TP)", "blood_tp")
 select_lab("アルブミン (ALB)", "blood_alb")
-select_lab("胸-LD（LDH）", "blood_ldh")
+select_lab("LD (LDH)", "blood_ldh")
 select_lab("血中尿素窒素 (BUN)", "blood_bun")
 select_lab("クレアチニン (CRE)", "blood_cre")
 select_lab("CRP", "blood_crp")
 select_lab("ｱﾙｶﾘﾌｫｽﾌｧﾀｰｾﾞ（ALP）" ," blood_alp")
+select_lab("血糖 （グルコース）", "pleural_glucose")
 select_lab("胸-pH", "pleural_pH")
 select_lab("胸-LD（LDH）", "pleural_ldh")
 select_lab("胸-蛋白定量 (TP)", "pleural_tp")
 select_lab("胸-アルブミン (ALB)", "pleural_alb")
-select_lab("血糖 （グルコース）", "pleural_glucose")
+select_lab("胸-糖定量 (Glu)", "pleural_glucose")
 select_lab("胸-好中球", "pleural_neutro")
 select_lab("胸-細胞数", "pleural_cell")
 select_lab("胸-リンパ球", "pleural_lymph")
 select_lab("胸-好酸球", "pleural_eosino")
 select_lab("胸-組織球", "pleural_macro")
 
-lab_combine
+lab_combine %>% glimpse()
+
+# Culture -----------------------------------------------------------------
+
+culture <- culture %>% 
+  mutate_all(.funs = ~ as.character(.)) 
+culture %>% glimpse()
+culture %>% colnames()
+
+unique(culture$検体)
+
+pleural_culture <- culture %>% 
+  filter(検体 == "胸水") %>% 
+  drop_na(菌名) %>% 
+  filter(菌名 != "No Growth") %>% 
+  rename(id = "匿名化ID",
+         adm_date = "入院年月日") 
+
+culture_combine <- left_join(key, pleural_culture, key = c("id", "adm_date")) %>% 
+  select(id, adm_date, diag_date, 採取日時, 菌名) %>% 
+  pivot_wider(names_from = 菌名,
+              values_from = 菌名)
+
+culture_combine

@@ -16,7 +16,8 @@ packages = c("devtools",
              "ggplotgui",
              "ggthemes",
              "arsenal",
-             "survival")
+             "survival",
+             "rlang")
 package.check <- lapply(packages, FUN = function(x){
   if (!require(x, character.only = TRUE)){
     install.packages(x, dependencies = TRUE)
