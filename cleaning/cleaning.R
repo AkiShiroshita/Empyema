@@ -27,6 +27,10 @@ package.check <- lapply(packages, FUN = function(x){
 getwd()
 rm(list=ls())
 
+usethis::use_git_config(user.name = "AkiShiroshita", user.email = "akihirokun8@gmail.com")
+usethis::git_sitrep()
+usethis::create_github_token()
+gitcreds::gitcreds_set()
 
 # Ichinomiya --------------------------------------------------------------
 
