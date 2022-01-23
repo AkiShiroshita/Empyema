@@ -834,83 +834,38 @@ pleural_glucose <- lab %>%
 
 # Combing -----------------------------------------------------------------
 
+abx <- read_csv("data/ichinomiya/cleaned/ichinomiya/abx.csv", 
+                locale = locale(encoding = "SHIFT-JIS"))
+culture2019 <- read_csv("data/ichinomiya/cleaned/ichinomiya/culture2019.csv", 
+                        locale = locale(encoding = "SHIFT-JIS"))
+culture2020 <- read_csv("data/ichinomiya/cleaned/ichinomiya/culture2020.csv", 
+                        locale = locale(encoding = "SHIFT-JIS"))
+culture2021 <- read_csv("data/ichinomiya/cleaned/ichinomiya/culture2021.csv", 
+                        locale = locale(encoding = "SHIFT-JIS"))
+
+dpc <- read_csv("data/ichinomiya/cleaned/ichinomiya/ichinomiya_complete_sub1.csv", 
+                locale = locale(encoding = "SHIFT-JIS"))
+dpc <- dpc %>% 
+  mutate_all(.funs = ~ as.character(.)) %>% 
+  distinct(id, adm_date, .keep_all=TRUE) %>% 
+  filter(str_detect(dmain, "J86")) %>% 
+  arrange(id, adm_date)
+dpc$adm_adl <- sapply(strsplit(dpc$adm_adl,""), function(x) sum(as.numeric(x))) 
+dpc$disc_adl <- sapply(strsplit(dpc$disc_adl,""), function(x) sum(as.numeric(x))) 
+
+dpc2 <- read_csv("data/ichinomiya/cleaned/chart_review/ichinomiya_chart.csv",
+                          locale = locale(encoding = "SHIFT-JIS"))
+dpc2 <- dpc2 %>% 
+  mutate_all(.funs = ~ as.character(.)) %>%  
+  filter(str_detect(empyema_or_not, "1")) %>% 
+  arrange(id, adm_date)
+
+dpc <- left_join(dpc2, dpc, by=c("id", "adm_date"))
 dpc %>% glimpse()
-dpc <- dpc %>% 
-  mutate(adm_date = ymd(adm_date),
-         diag_date = ymd(diag_date),
-         last_date = ymd(last_date),
-         disc_date = ymd(disc_date))
-dpc <- dpc %>% 
-  mutate(flag_date1 = str_c(id, as.character(diag_date - 2), sep = "/"),
-         flag_date2 = str_c(id, as.character(diag_date - 1), sep = "/"),
-         flag_date3 = str_c(id, as.character(diag_date), sep = "/"),
-         flag_date4 = str_c(id, as.character(diag_date + 1), sep = "/"),
-         flag_date5 = str_c(id, as.character(diag_date + 2), sep = "/")
-  )
-flag_date1 <- str_c(dpc$flag_date1, collapse = "|")
-flag_date2 <- str_c(dpc$flag_date2, collapse = "|")
-flag_date3 <- str_c(dpc$flag_date3, collapse = "|")
-flag_date4 <- str_c(dpc$flag_date4, collapse = "|")
-flag_date5 <- str_c(dpc$flag_date5, collapse = "|")
+dpc %>% write.csv("data/ichinomiya/cleaned/ichinomiya/dpc.csv")
 
-dpc <- dpc %>% 
-  mutate_all(.funs = ~ as.character(.))
-## combining drainage data
-drainage <- drainage %>%
-  filter(name == "J0021") %>% 
-  mutate(day = ymd(day)-1,
-         adm = ymd(adm)) %>% 
-  pivot_wider(names_from = name, values_from = day) %>% 
-  rename(drainage = "J0021",
-         adm_date = "adm") %>% 
-  mutate_all(.funs = ~ as.character(.))
-dpc <- left_join(dpc, drainage, by=c("id", "adm_date"))
+drainage <- read_csv("data/ichinomiya/cleaned/ichinomiya/drainage.csv", 
+                     locale = locale(encoding = "SHIFT-JIS"))
 
-## combing lab data
-add_lab <- function(data, number, priority){
-  data <- data %>% 
-    mutate(name = lab_label[number],
-           flag = str_c(id, as.character(day), sep = "/")) %>% 
-    filter(str_detect(flag, priority) & !is.na(flag)) %>% 
-    select(id, day, name, result) %>% 
-    distinct(id, .keep_all=TRUE) %>% 
-    pivot_wider(names_from = name, values_from = result) %>% 
-    rename(diag_date = day) %>% 
-    mutate_all(.funs = ~ as.character(.))
-  dpc <- left_join(dpc, data, by=c("id", "diag_date"))
-}
-
-add_lab(blood_tp, 4, flag_date3)
-lab_label[4] #1-12
-blood_tp <- blood_tp %>% 
-  mutate(name = lab_label[4],
-         flag = str_c(id, day, sep = "/")) %>% 
-  filter(#str_detect(flag, flag_date1) | 
-    # str_detect(flag, flag_date2) | 
-    str_detect(flag, flag_date3) & !is.na(flag) #| 
-    # str_detect(flag, flag_date4) | 
-    # str_detect(flag, flag_date5)
-  ) %>% 
-  select(id, day, name, result) %>% 
-  distinct(id, .keep_all=TRUE) %>% 
-  pivot_wider(names_from = name, values_from = result) %>% 
-  rename(diag_date = day) %>% 
-  mutate_all(.funs = ~ as.character(.))
-dpc <- left_join(dpc, blood_tp, by=c("id", "diag_date"))
-
-lab_label[7]
-blood_bun <- blood_bun %>% 
-  mutate(name = lab_label[7],
-         flag = str_c(id, as.character(day), sep = "/")) %>% 
-  filter(#str_detect(flag, flag_date1) | 
-    # str_detect(flag, flag_date2) | 
-    str_detect(flag, flag_date3) #| 
-    # str_detect(flag, flag_date4) | 
-    # str_detect(flag, flag_date5)
-  ) %>% 
-  select(id, day, name, result) %>% 
-  distinct(id, .keep_all=TRUE) %>% 
-  pivot_wider(names_from = name, values_from = result) %>% 
-  rename(diag_date = day) %>% 
-  mutate_all(.funs = ~ as.character(.))
-dpc <- left_join(dpc, blood_bun, by=c("id", "diag_date"))
+lab <- read_csv("data/ichinomiya/cleaned/ichinomiya/lab.csv", 
+                locale = locale(encoding = "SHIFT-JIS"))
