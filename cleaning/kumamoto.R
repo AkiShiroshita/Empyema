@@ -25,10 +25,7 @@ chart %>% colnames()
 chart <- chart %>% 
   filter(電子カルテでの膿胸の診断 == "膿胸") %>% 
   mutate(hospid = 5) %>% 
-  rename(id = "匿名化ID",
-         aspiration = "胸腔穿刺",
-         drainage = "持続的胸腔ドレナージ",
-         mv = "人工呼吸治療の有無") 
+  rename(id = "匿名化ID") 
 
 chart_clean(chart)
 
@@ -47,6 +44,8 @@ dpc %>% colnames()
 
 dpc_renanme(dpc)
 dpc_select(dpc)
+
+dpc_selected %>% glimpse()
 
 # Oral --------------------------------------------------------------------
 
