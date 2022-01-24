@@ -1,8 +1,9 @@
 
 # Data import -------------------------------------------------------------
 
-dpc <- read_excel("data/kumamoto/uncleaned/kumamoto_dpcdwh.xlsx",
+dpcdwh <- read_excel("data/kumamoto/uncleaned/kumamoto_dpcdwh.xlsx",
                   sheet = "dpc")
+dpc <- read_excel("data/kumamoto/uncleaned/kumamoto_dpc.xlsx")
 oral <- read_excel("data/kumamoto/uncleaned/kumamoto_dpcdwh.xlsx",
                    sheet = "oral")
 iv <- read_excel("data/kumamoto/uncleaned/kumamoto_dpcdwh.xlsx",
@@ -24,7 +25,10 @@ chart %>% colnames()
 chart <- chart %>% 
   filter(電子カルテでの膿胸の診断 == "膿胸") %>% 
   mutate(hospid = 5) %>% 
-  rename(id = "匿名化ID") 
+  rename(id = "匿名化ID",
+         aspiration = "胸腔穿刺",
+         drainage = "持続的胸腔ドレナージ",
+         mv = "人工呼吸治療の有無") 
 
 chart_clean(chart)
 
@@ -41,14 +45,8 @@ dpc <- dpc %>%
 dpc %>% glimpse()
 dpc %>% colnames()
 
-dpc <- dpc %>% 
-  rename(sex = "027 性別",
-         birth_date = "024 生年月日",
-         adm_date = "006 入院年月日2",
-         disc_date = "007 退院年月日2",
-         adm_style = ""
-         
-  )
+dpc_renanme(dpc)
+dpc_select(dpc)
 
 # Oral --------------------------------------------------------------------
 
@@ -67,11 +65,70 @@ oral <- oral %>%
 oral <- inner_join(key, oral, by = c("id", "adm_date"))
 
 unique(oral$name)
-
-oral_list <- read_excel("memo/oral_list.xlsx")
+oral_abx <- oral %>% 
+  filter(name == "オーグメンチン配合錠２５０ＲＳ" |
+           name == "アモキシシリンｶﾌﾟｾﾙ250mg(抗菌薬)(ｻﾜｼﾘﾝ)"|
+           name == "エリスロシン錠１００ｍｇ") %>% 
+  distinct(id, adm_date, name, .keep_all=TRUE)
 
 # IV ----------------------------------------------------------------------
 
+iv <- iv %>% 
+  mutate_all(.funs = ~ as.character(.)) 
+iv %>% glimpse()
+iv %>% colnames()
+
+iv <- iv %>% 
+  rename(id = "匿名化ID",
+         adm_date = "入院年月日",
+         name = "薬剤名称",
+         day = "開始日") %>% 
+  select(id, adm_date, name, day)
+
+iv <- inner_join(key, iv, by = c("id", "adm_date"))
+
+unique(iv$name)
+iv_abx <- iv %>% 
+  filter(name == "★スルバシリン静注用 1.5g/瓶" |
+           name == "セフメタゾールﾅﾄﾘｳﾑ静注用1g/瓶(ｾﾌﾒﾀｿﾞﾝ)"|
+           name == "セフトリアキソンﾅﾄﾘｳﾑ静注用 1g/瓶"|
+           name == "セファゾリンﾅﾄﾘｳﾑ注射用 1g/瓶(ｾﾌｧﾒｼﾞﾝ)"|
+           name == "ダラシンＳ注射液 600mg/4mL/管"|
+           name == "注射用ビクシリン 1g/瓶"|
+           name == "ｼﾌﾟﾛﾌﾛｷｻｼﾝ点滴静注 300mg/150mL/袋"|
+           name == "メロペネム点滴静注用｢明治｣ 0.5g/瓶"|
+           name == "セフトリアキソンﾅﾄﾘｳﾑ静注用　1g/瓶"|
+           name == "タゾピペ配合静注用【2.25g/瓶】(ｿﾞｼﾝ)"|
+           name == "ｸﾘﾝﾀﾞﾏｲｼﾝﾘﾝ酸ｴｽﾃﾙ注射液600mg/4mL(ﾀﾞﾗｼﾝ)"|
+           name == "注射用ビクシリン　1g/瓶"|
+           name == "メロペネム点滴静注用｢明治｣　0.5g/瓶"|
+           name == "バクトラミン注　5mL/管"|
+           name == "ダラシンＳ注射液　600mg/4mL/管"|
+           name == "ジスロマック点滴静注用500mg"|
+           name == "タゾピペ配合静注用【4.5g/瓶】(ｿﾞｼﾝ)"|
+           name == "セフォタックス注射用　1g/瓶"|
+           name == "バンコマイシン注「MEEK」　500mg/瓶"|
+           name == "《胸腔内》ﾐﾉｻｲｸﾘﾝ塩酸塩注100mg/瓶"|
+           name == "ゾシン静注用【4.5g/瓶】"|
+           name == "セフメタゾン静注用　1g/瓶"|
+           name == "セフォセフ静注用　1g/瓶（SBT/CPZ）"|
+           name == "ペントシリン注射用　2g/瓶"|
+           name == "セフトリアキソンﾅﾄﾘｳﾑ静注用1g"|
+           name == "ゾシン静注用【2.25g/瓶】"|
+           name == "ｼﾌﾟﾛﾌﾛｷｻｼﾝ点滴静注　300mg/150mL/袋"|
+           name == "セフォセフ静注用　1g/瓶"|
+           name == "注射用ペニシリンＧｶﾘｳﾑ　100万単位/瓶"|
+           name == "注射用マキシピーム　1g/瓶") %>% 
+  distinct(id, adm_date, name, .keep_all=TRUE)
+
+uk <- iv %>% 
+  filter(name == "《胸腔内》★★ｳﾛﾅｰｾﾞ静注用 6万単位/瓶"|
+           name == "《胸腔内》★★ｳﾛﾅｰｾﾞ静注用 6万単位"|
+           name == "《胸腔内》★★★ｳﾛﾅｰｾﾞ静注用 6万単位"|
+           name == "★★★ｳﾛﾅｰｾﾞ静注用 6万単位/瓶"|
+           name == "《胸腔内》★★★ｳﾛｷﾅｰｾﾞ６万単位\r\n"|
+           name == "★★★ｳﾛｷﾅｰｾﾞ6万単位") %>% 
+  distinct(id, adm_date, name, .keep_all=TRUE) 
 
 # Lab ---------------------------------------------------------------------
 

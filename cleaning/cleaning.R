@@ -34,6 +34,8 @@ usethis::create_github_token()
 gitcreds::gitcreds_set()
 
 source(here("cleaning","chart_clean.R"))
+source(here("cleaning","dpc_rename.R"))
+source(here("cleaning","dpc_select.R"))
 
 # Ichinomiya --------------------------------------------------------------
 
