@@ -2,7 +2,11 @@
 # Import data -------------------------------------------------------------
 
 dpcdwh <- read_csv("data/kobe/uncleaned/kobe.csv",
-                   locale = locale(encoding = "SHIFT-JIS"))
+                   locale = locale(encoding = "cp932"))
+ef <- read_excel("data/kobe/uncleaned/ef.xlsx")
+lab <- read_excel("data/kobe/uncleaned/lab.xlsx")
+yoshiki1 <- read_excel("data/kobe/uncleaned/yoshiki1.xlsx")
+culture <- read_excel("data/kobe/uncleaned/culture.xlsx")
 
 # DPC/DWH -----------------------------------------------------------------
 
@@ -15,7 +19,6 @@ dpc <- dpcdwh %>%
 
 # Lab ---------------------------------------------------------------------
 
-lab <- read_excel("data/kobe/uncleaned/lab.xlsx")
 lab %>% glimpse()
 lab %>% colnames()
 
@@ -29,7 +32,6 @@ lab <- lab %>%
 
 # Culture -----------------------------------------------------------------
 
-culture <- read_excel("data/kobe/uncleaned/culture.xlsx")
 culture %>% glimpse()
 culture %>% colnames()
 
