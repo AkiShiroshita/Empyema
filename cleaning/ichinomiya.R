@@ -47,6 +47,13 @@ chart <- read_csv("cleaned_data/chart_review/ichinomiya.csv",
                   locale = locale(encoding = "SHIFT-JIS"),
                   na = "")
 
+source(here("cleaning","chart_clean.R"),
+       encoding="UTF-8")
+source(here("cleaning","dpc_rename.R"),
+       encoding="UTF-8")
+source(here("cleaning","dpc_select.R"),
+       encoding="UTF-8")
+
 # DPC ---------------------------------------------------------------------
 
 dpc_2019 %>% dim() # not suitable

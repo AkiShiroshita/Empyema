@@ -9,6 +9,13 @@ chart <- read_csv("data/yokohama/uncleaned/chart.csv",
                   locale = locale(encoding = "SHIFT-JIS"), 
                   na = "empty")
 
+source(here("cleaning","chart_clean.R"),
+       encoding="UTF-8")
+source(here("cleaning","dpc_rename.R"),
+       encoding="UTF-8")
+source(here("cleaning","dpc_select.R"),
+       encoding="UTF-8")
+
 # Chart ---------------------------------------------------------------------
 
 chart %>% glimpse()

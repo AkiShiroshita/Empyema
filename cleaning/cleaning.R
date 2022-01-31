@@ -33,13 +33,6 @@ usethis::git_sitrep()
 usethis::create_github_token()
 gitcreds::gitcreds_set()
 
-source(here("cleaning","chart_clean.R"),
-       encoding="UTF-8")
-source(here("cleaning","dpc_rename.R"),
-       encoding="UTF-8")
-source(here("cleaning","dpc_select.R"),
-       encoding="UTF-8")
-
 # Ichinomiya --------------------------------------------------------------
 
 file.edit("cleaning/ichinomiya.R")

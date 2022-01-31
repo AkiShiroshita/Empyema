@@ -8,6 +8,13 @@ lab <- read_excel("data/kobe/uncleaned/lab.xlsx")
 yoshiki1 <- read_excel("data/kobe/uncleaned/yoshiki1.xlsx")
 culture <- read_excel("data/kobe/uncleaned/culture.xlsx")
 
+source(here("cleaning","chart_clean.R"),
+       encoding="UTF-8")
+source(here("cleaning","dpc_rename.R"),
+       encoding="UTF-8")
+source(here("cleaning","dpc_select.R"),
+       encoding="UTF-8")
+
 # DPC/DWH -----------------------------------------------------------------
 
 dpcdwh %>% glimpse()
