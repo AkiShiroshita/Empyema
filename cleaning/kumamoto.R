@@ -43,9 +43,15 @@ dpc %>% glimpse()
 dpc %>% colnames()
 
 dpc_renanme(dpc)
+dpc <- dpc %>% 
+  rename(id = "匿名化ID") 
 dpc_select(dpc)
 
 dpc_selected %>% glimpse()
+
+complete <- left_join(chart, dpc_selected, by=c("id", "adm_date"))
+complete %>% glimpse()
+complete %>% write.csv("data/kumamoto/cleaned/dpc.csv")
 
 # Oral --------------------------------------------------------------------
 
@@ -69,6 +75,8 @@ oral_abx <- oral %>%
            name == "アモキシシリンｶﾌﾟｾﾙ250mg(抗菌薬)(ｻﾜｼﾘﾝ)"|
            name == "エリスロシン錠１００ｍｇ") %>% 
   distinct(id, adm_date, name, .keep_all=TRUE)
+
+oral_abx %>% write.csv("data/kumamoto/cleaned/oral_abx.csv")
 
 # IV ----------------------------------------------------------------------
 
@@ -129,6 +137,9 @@ uk <- iv %>%
            name == "★★★ｳﾛｷﾅｰｾﾞ6万単位") %>% 
   distinct(id, adm_date, name, .keep_all=TRUE) 
 
+iv_abx %>% write.csv("data/kumamoto/cleaned/iv_abx.csv")
+uk %>% write.csv("data/kumamoto/cleaned/uk.csv")
+
 # Lab ---------------------------------------------------------------------
 
 lab <- lab %>% 
@@ -151,7 +162,7 @@ lab_key <- lab %>%
   
 unique(lab$name)
 
-lab_toal <- lab %>% 
+lab_total <- lab %>% 
   filter(name == "総蛋白 (TP)" | 
            name == "アルブミン (ALB)"|
            name == "血中尿素窒素 (BUN)"|
@@ -179,7 +190,7 @@ lab_toal <- lab %>%
 lab_combine <- key
 
 select_lab <- function(lab_name, new_name){
-  lab <- lab_toal %>% 
+  lab <- lab_total %>% 
     filter(name == lab_name)
   index1 <- neardate(lab_key$id,
                  lab$id,
@@ -214,7 +225,7 @@ select_lab("血中尿素窒素 (BUN)", "blood_bun")
 select_lab("クレアチニン (CRE)", "blood_cre")
 select_lab("CRP", "blood_crp")
 select_lab("ｱﾙｶﾘﾌｫｽﾌｧﾀｰｾﾞ（ALP）" ,"blood_alp")
-select_lab("血糖 （グルコース）", "pleural_glucose")
+select_lab("血糖 （グルコース）", "blood_glucose")
 select_lab("胸-pH", "pleural_pH")
 select_lab("胸-LD（LDH）", "pleural_ldh")
 select_lab("胸-蛋白定量 (TP)", "pleural_tp")
@@ -230,6 +241,8 @@ lab_combine %>% glimpse()
 
 lab_combine <- lab_combine %>% 
   mutate(blood_wbc = as.character(as.numeric(blood_wbc)*1000)) 
+
+lab_combine %>% write.csv("data/kumamoto/cleaned/lab.csv")
 
 # Culture -----------------------------------------------------------------
 
@@ -255,3 +268,5 @@ culture_combine <- left_join(key, pleural_culture, key = c("id", "adm_date")) %>
   ungroup()
 
 culture_combine
+
+culture_combine %>% write.csv("data/kumamoto/cleaned/culture.csv")
