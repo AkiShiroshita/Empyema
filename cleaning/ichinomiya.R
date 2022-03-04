@@ -69,6 +69,174 @@ cases_2020 %>% dim()
 cases_2021 %>% dim()
 
 dpc <- c()
+
+uniter <- function(data){
+  dpc_sub <<- data %>% 
+    unite(id, contains("データ識別番号"),
+          sep = "_",
+          remove = TRUE,
+          na.rm = TRUE) %>% 
+    unite(sex, contains("性別"),
+          sep = "_",
+          remove = TRUE,
+          na.rm = TRUE) %>% 
+    unite(age, contains("年齢"),
+          sep = "_",
+          remove = TRUE,
+          na.rm = TRUE) %>% 
+    unite(adm_date, contains("入院日"),
+          sep = "_",
+          remove = TRUE,
+          na.rm = TRUE) %>% 
+    unite(disc_date, contains("退院日"),
+          sep = "_",
+          remove = TRUE,
+          na.rm = TRUE) %>% 
+    unite(los, contains("在院日数"),
+          sep = "_",
+          remove = TRUE,
+          na.rm = TRUE) %>% 
+    unite(death, contains("死亡の有無"),
+          sep = "_",
+          remove = FALSE,
+          na.rm = TRUE) %>% 
+    unite(k, contains("Kコード"),
+          sep = "_",
+          remove = FALSE,
+          na.rm = TRUE) %>% 
+    unite(opek, contains("手術Kコード"),
+          sep = "_",
+          remove = TRUE,
+          na.rm = TRUE) %>% 
+    unite(openm, contains("手術名称"),
+          sep = "_",
+          remove = TRUE,
+          na.rm = TRUE) %>% 
+    unite(adm_style, contains("予定・救急医療入院"),
+          sep = "_",
+          remove = TRUE,
+          na.rm = TRUE) %>%
+    unite(adm_ambul, contains("救急車による搬送の有無"),
+          sep = "_",
+          remove = TRUE,
+          na.rm = TRUE) %>% 
+    unite(disc_to, contains("退院先"),
+          sep = "_",
+          remove = TRUE,
+          na.rm = TRUE) %>% 
+    unite(disc_outcome, contains("退院時転帰"),
+          sep = "_",
+          remove = TRUE,
+          na.rm = TRUE) %>% 
+    unite(death_24h, contains("24 時間以内の死亡の有無"),
+          sep = "_",
+          remove = TRUE,
+          na.rm = TRUE) %>% 
+    unite(height, contains("身長"),
+          sep = "_",
+          remove = TRUE,
+          na.rm = TRUE) %>% 
+    unite(weight, contains("体重"),
+          sep = "_",
+          remove = TRUE,
+          na.rm = TRUE) %>% 
+    unite(smokingidx, contains("喫煙指数"),
+          sep = "_",
+          remove = TRUE,
+          na.rm = TRUE) %>% 
+    unite(dmainnm, contains("主傷病名"),
+          sep = "_",
+          remove = TRUE,
+          na.rm = TRUE) %>% 
+    unite(icd_all, contains("ICD10 コード"),
+          sep = "_",
+          remove = TRUE,
+          na.rm = TRUE) %>% 
+    unite(dresnm, contains("医療資源を最も投入した傷病名"),
+          sep = "_",
+          remove = TRUE,
+          na.rm = TRUE) %>% 
+    unite(dcom1nm, contains("入院時併存症名1"),
+          sep = "_",
+          remove = TRUE,
+          na.rm = TRUE) %>% 
+    unite(dcom2nm, contains("入院時併存症名2"),
+          sep = "_",
+          remove = TRUE,
+          na.rm = TRUE) %>% 
+    unite(dcom3nm, contains("入院時併存症名3"),
+          sep = "_",
+          remove = TRUE,
+          na.rm = TRUE) %>% 
+    unite(dcom4nm, contains("入院時併存症名4"),
+          sep = "_",
+          remove = TRUE,
+          na.rm = TRUE) %>% 
+    unite(adm_before, contains("前回同一傷病で自院入院の有無"),
+          sep = "_",
+          remove = TRUE,
+          na.rm = TRUE) %>% 
+    unite(opedt, contains("手術日"),
+          sep = "_",
+          remove = TRUE,
+          na.rm = TRUE) %>% 
+    unite(adm_adl, contains("入院時のADLスコア"),
+          sep = "_",
+          remove = TRUE,
+          na.rm = TRUE) %>% 
+    unite(disc_adl, contains("退院時のADLスコア"),
+          sep = "_",
+          remove = TRUE,
+          na.rm = TRUE) %>%
+    unite(adm_jcs, contains("入院時意識障害がある場合のJCS"),
+          sep = "_",
+          remove = TRUE,
+          na.rm = TRUE) %>%
+    unite(disc_jcs, contains("退院時意識障害がある場合のJCS"),
+          sep = "_",
+          remove = TRUE,
+          na.rm = TRUE) %>%
+    unite(hughjones, contains("Hugh-Jones 分類"),
+          sep = "_",
+          remove = TRUE,
+          na.rm = TRUE) %>%
+    select(id,
+           sex,
+           age,
+           adm_date,
+           disc_date,
+           los,
+           death,
+           k,
+           opek,
+           openm,
+           adm_style,
+           adm_ambul,
+           disc_to,
+           disc_outcome,
+           death_24h,
+           height,
+           weight,
+           smokingidx,
+           dmainnm,
+           icd_all,
+           dresnm,
+           dcom1nm,
+           dcom2nm,
+           dcom3nm,
+           dcom4nm,
+           adm_before,
+           opedt,
+           adm_adl,
+           disc_adl,
+           adm_jcs,
+           disc_jcs,
+           hughjones) %>% 
+    mutate_all(.funs = ~ as.character(.))
+  dpc <<- bind_rows(dpc, dpc_sub)
+}
+
+
 uniter(cases_2019)
 uniter(cases_2020)
 uniter(cases_2021)
@@ -86,7 +254,7 @@ dpc <- dpc %>%
            sep = "_",
            remove = "FALSE") %>% 
   separate(sex,
-           into = c("sex", "non-sex"),
+           into = c("sex", "non_sex"),
            sep = "_") %>% 
   separate(age,
            into = c("age", "non_age"),
@@ -105,19 +273,14 @@ dpc$adm_adl <- sapply(strsplit(dpc$adm_adl,""), function(x) sum(as.numeric(x)))
 dpc$disc_adl <- sapply(strsplit(dpc$disc_adl,""), function(x) sum(as.numeric(x))) 
 
 dpc <- dpc %>% 
-  filter(str_detect(dmain, "J86"))
-
-dpc <- left_join(chart, dpc, by=c("id", "adm_date"))
-dpc %>% glimpse()
-
-dpc <- dpc %>% 
   select(-starts_with("non")) %>% 
   separate(icd_all,
            into = c("dmain", "dadm", "dres", "dcom1", "dcom2", "dcom3", "dcom4", "dcom5", "dcom6", "dcom7", "dcom8", "dcom9"),
            sep = "_",
            remove = "FALSE")
 # Please note we cannot distinguish "ddev" from "dcom"
-dpc %>% write.csv("data/ichinomiya/cleaned/dpc.csv")
+
+complete <- left_join(key, dpc, by=c("id", "adm_date"))
 
 screen <- str_c(dpc$id, collapse = "|") # for selecting variables
 
@@ -127,61 +290,70 @@ screen <- str_c(dpc$id, collapse = "|") # for selecting variables
 abx_2019 <- act_2019 %>% 
   filter(薬効分類2 == "抗生物質製剤") %>% 
   rename(id = "データ識別番号",
-         adm = "入院日",
+         adm_date = "入院日",
          day = "実施日付",
          name = "薬効分類7"
   ) %>% 
-  arrange(id, adm, day) %>%  
-  select(id, adm, day, name) %>%
-  group_by(id, adm, name) %>% 
-  mutate(day = ymd(day),
-         length = max(day) - min(day) + 1) %>% 
-  ungroup() %>% 
-  distinct(id, adm, name, .keep_all=TRUE) 
+  arrange(id, adm_date, day) %>%  
+  select(id, adm_date, day, name) 
 
 ## abx 2020
 abx_2020 <- act_2020 %>% 
   filter(薬効分類2 == "抗生物質製剤") %>% 
   rename(id = "データ識別番号",
-         adm = "入院日",
+         adm_date = "入院日",
          day = "実施日付",
          name = "薬効分類7"
   ) %>% 
-  arrange(id, adm, day) %>%  
-  select(id, adm, day, name) %>%
-  group_by(id, adm, name) %>% 
-  mutate(day = ymd(day),
-         length = max(day) - min(day) + 1) %>% 
-  ungroup() %>% 
-  distinct(id, adm, name, .keep_all=TRUE) 
+  arrange(id, adm_date, day) %>%  
+  select(id, adm_date, day, name) 
 
 ## abx 2021
 abx_2021 <- act_2021 %>% 
   filter(薬効分類2 == "抗生物質製剤") %>% 
   rename(id = "データ識別番号",
-         adm = "入院日",
+         adm_date = "入院日",
          day = "実施日付",
          name = "薬効分類7"
   ) %>% 
-  arrange(id, adm, day) %>%  
-  select(id, adm, day, name) %>%
-  group_by(id, adm, name) %>% 
-  mutate(day = ymd(day),
-         length = max(day) - min(day) + 1) %>% 
-  ungroup() %>% 
-  distinct(id, adm, name, .keep_all=TRUE) 
+  arrange(id, adm_date, day) %>%  
+  select(id, adm_date, day, name)
 
 ## Combine the datasets
 abx <- bind_rows(abx_2019, abx_2020)
 abx <- bind_rows(abx, abx_2021)
 abx <- abx %>% 
   mutate_all(.funs = ~ as.character(.)) %>% 
-  arrange(id, adm, day) %>% 
-  distinct(id, adm, name, .keep_all=TRUE)
-abx$id <- str_sub(abx$id, start = 5)
-abx <- abx %>% 
+  mutate(id = str_sub(abx$id, start = 5)) %>% 
   filter(str_detect(id, screen))
-abx$day <- str_replace_all(abx$day, pattern = "-", replacement="")
+
+abx_start <- abx %>%  
+  arrange(id, adm_date, day) %>% 
+  distinct(id, adm_date, name, .keep_all=TRUE) %>% 
+  rename(abx = name,
+         abx_start = day)
+
+abx_end <- abx %>%  
+  arrange(id, adm_date, desc(day)) %>% 
+  distinct(id, adm_date, name, .keep_all=TRUE) %>% 
+  rename(abx = name,
+         abx_end = day)
+
+abx <- left_join(abx_start, abx_end, by = c("id", "adm_date", "abx")) %>% 
+  select(id, adm_date, abx, abx_start, abx_end) 
+
+abx <- abx %>% 
+  group_by(id, adm_date) %>% 
+  summarise(abx_all_names = paste0(abx,
+                                        collapse = "_"),
+            abx_all_day = paste0(abx_start,
+                                      abx_end,
+                                      collapse = "_")) %>% 
+  ungroup(id, adm_date) 
+
+complete <- left_join(complete, abx, by=c("id", "adm_date"))
+
+#abx$day <- str_replace_all(abx$day, pattern = "-", replacement="")
 abx %>% write.csv("data/ichinomiya/cleaned/abx.csv")
 
 # drainage 2019
@@ -189,63 +361,70 @@ abx %>% write.csv("data/ichinomiya/cleaned/abx.csv")
 
 drainage_2019 <- act_2019 %>% 
   rename(id = "データ識別番号",
-         adm = "入院日",
+         adm_date = "入院日",
          day = "実施日付",
          name = "マスタ解釈番号（基本）"
   ) %>% 
   filter(name == "J019" | name == "J0021" | name == "J008") %>% 
-  arrange(id, adm, day) %>%  
-  select(id, adm, day, name) %>%
-  group_by(id, adm, name) %>% 
-  mutate(day = ymd(day),
-         length = max(day) - min(day) + 1) %>% 
-  ungroup() %>% 
-  distinct(id, adm, name, .keep_all=TRUE) 
+  arrange(id, adm_date, day) %>%  
+  select(id, adm_date, day, name)
 
 # drainage 2020
 drainage_2020 <- act_2020 %>% 
   rename(id = "データ識別番号",
-         adm = "入院日",
+         adm_date = "入院日",
          day = "実施日付",
          name = "マスタ解釈番号（基本）"
   ) %>% 
   filter(name == "J019" | name == "J0021" | name == "J008") %>% 
-  arrange(id, adm, day) %>%  
-  select(id, adm, day, name) %>%
-  group_by(id, adm, name) %>% 
-  mutate(day = ymd(day),
-         length = max(day) - min(day) + 1) %>% 
-  ungroup() %>% 
-  distinct(id, adm, name, .keep_all=TRUE) 
+  arrange(id, adm_date, day) %>%  
+  select(id, adm_date, day, name) 
 
 # drainage 2021
 drainage_2021 <- act_2021 %>% 
   rename(id = "データ識別番号",
-         adm = "入院日",
+         adm_date = "入院日",
          day = "実施日付",
          name = "マスタ解釈番号（基本）"
   ) %>% 
   filter(name == "J019" | name == "J0021" | name == "J008") %>% 
-  arrange(id, adm, day) %>%  
-  select(id, adm, day, name) %>%
-  group_by(id, adm, name) %>% 
-  mutate(day = ymd(day),
-         length = max(day) - min(day) + 1) %>% 
-  ungroup() %>% 
-  distinct(id, adm, name, .keep_all=TRUE) 
+  arrange(id, adm_date, day) %>%  
+  select(id, adm_date, day, name) 
 
 ## Combine the datasets
 drainage <- bind_rows(drainage_2019, drainage_2020)
 drainage <- bind_rows(drainage, drainage_2021)
+
 drainage <- drainage %>% 
   mutate_all(.funs = ~ as.character(.)) %>% 
-  arrange(id, adm, day) %>% 
-  distinct(id, adm, name, .keep_all=TRUE)
-drainage$id <- str_sub(drainage$id, start = 5)
-drainage <- drainage %>% 
+  mutate(id = str_sub(drainage$id, start = 5)) %>% 
   filter(str_detect(id, screen))
-drainage$day <- str_replace_all(drainage$day, pattern = "-", replacement="")
-drainage %>% write.csv("data/ichinomiya/cleaned/drainage.csv")
+
+drainage_start <- drainage %>%  
+  arrange(id, adm_date, day) %>% 
+  distinct(id, adm_date, name, .keep_all=TRUE) %>% 
+  rename(drainage = name,
+         drainage_start = day)
+
+drainage_end <- drainage %>%  
+  arrange(id, adm_date, desc(day)) %>% 
+  distinct(id, adm_date, name, .keep_all=TRUE) %>% 
+  rename(drainage = name,
+         drainage_end = day)
+
+drainage <- left_join(drainage_start, drainage_end, by = c("id", "adm_date", "drainage")) %>% 
+  select(id, adm_date, drainage, drainage_start, drainage_end) 
+
+drainage <- drainage %>% 
+  group_by(id, adm_date) %>% 
+  summarise(drainage_all_names = paste0(drainage,
+                                   collapse = "_"),
+            drainage_all_day = paste0(drainage_start,
+                                 drainage_end,
+                                 collapse = "_")) %>% 
+  ungroup(id, adm_date) 
+
+complete <- left_join(complete, drainage, by=c("id", "adm_date"))
 
 # Culture -----------------------------------------------------------------
 
@@ -382,7 +561,7 @@ select_lab <- function(lab_name, new_name){
     distinct(id, date, .keep_all=TRUE) %>%  
     select(-name, -date)
   names(lab)[which(names(lab)=="value" ) ] <- new_name
-  lab_combine <<- left_join(lab_combine, lab, key = c("id", "adm"))
+  lab_combine <<- left_join(lab_combine, lab, key = "id")
 }
 
 unique(lab$name)
@@ -412,6 +591,11 @@ lab_combine %>% glimpse()
 
 lab_combine <- lab_combine %>% 
   mutate(blood_wbc = as.character(as.numeric(blood_wbc)*1000),
-         blood_wbc2 = as.character(as.numeric(blood_wbc2)*100)) 
+         blood_wbc2 = as.character(as.numeric(blood_wbc2)*100)) %>% 
+  select(-diag_date) %>% 
+  distinct(id, adm_date, .keep_all = TRUE)
+
+complete <- left_join(complete, lab_combine, by=c("id", "adm_date"))
 
 lab_combine %>% write.csv("data/ichinomiya/cleaned/lab.csv")
+complete %>% write.csv("data/ichinomiya/cleaned/ichinomiya.csv")
