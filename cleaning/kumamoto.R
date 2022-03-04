@@ -70,11 +70,40 @@ oral <- oral %>%
 oral <- inner_join(key, oral, by = c("id", "adm_date"))
 
 unique(oral$name)
-oral_abx <- oral %>% 
+
+oral_abx_start <- oral %>% 
   filter(name == "オーグメンチン配合錠２５０ＲＳ" |
            name == "アモキシシリンｶﾌﾟｾﾙ250mg(抗菌薬)(ｻﾜｼﾘﾝ)"|
            name == "エリスロシン錠１００ｍｇ") %>% 
-  distinct(id, adm_date, name, .keep_all=TRUE)
+  arrange(id, adm_date, day) %>% 
+  distinct(id, adm_date, name, .keep_all=TRUE) %>% 
+  rename(oral_abx = name,
+         oral_abx_start = day)
+
+oral_abx_end <- oral %>% 
+  filter(name == "オーグメンチン配合錠２５０ＲＳ" |
+           name == "アモキシシリンｶﾌﾟｾﾙ250mg(抗菌薬)(ｻﾜｼﾘﾝ)"|
+           name == "エリスロシン錠１００ｍｇ") %>% 
+  arrange(id, adm_date, desc(day)) %>% 
+  distinct(id, adm_date, name, .keep_all=TRUE) %>% 
+  rename(oral_abx = name,
+         oral_abx_end = day)
+
+oral_abx <- left_join(oral_abx_start, oral_abx_end, by = c("id", "adm_date", "oral_abx")) %>% 
+  select(id, adm_date, oral_abx, oral_abx_start, oral_abx_end) %>% 
+  mutate(oral_abx_start = as.Date(oral_abx_start),
+         oral_abx_end = as.Date(oral_abx_end))
+
+oral_abx <- oral_abx %>% 
+  group_by(id, adm_date) %>% 
+  summarise(oral_abx_all_names = paste0(oral_abx,
+                               collapse = "_"),
+            oral_abx_all_day = paste0(oral_abx_start,
+                             oral_abx_end,
+                             collapse = "_")) %>% 
+  ungroup(id, adm_date) 
+
+complete <- left_join(complete, oral_abx, by=c("id", "adm_date"))
 
 oral_abx %>% write.csv("data/kumamoto/cleaned/oral_abx.csv")
 
@@ -95,7 +124,8 @@ iv <- iv %>%
 iv <- inner_join(key, iv, by = c("id", "adm_date"))
 
 unique(iv$name)
-iv_abx <- iv %>% 
+
+iv_abx_start <- iv %>% 
   filter(name == "★スルバシリン静注用 1.5g/瓶" |
            name == "セフメタゾールﾅﾄﾘｳﾑ静注用1g/瓶(ｾﾌﾒﾀｿﾞﾝ)"|
            name == "セフトリアキソンﾅﾄﾘｳﾑ静注用 1g/瓶"|
@@ -126,7 +156,62 @@ iv_abx <- iv %>%
            name == "セフォセフ静注用　1g/瓶"|
            name == "注射用ペニシリンＧｶﾘｳﾑ　100万単位/瓶"|
            name == "注射用マキシピーム　1g/瓶") %>% 
-  distinct(id, adm_date, name, .keep_all=TRUE)
+  arrange(id, adm_date, day) %>% 
+  distinct(id, adm_date, name, .keep_all=TRUE) %>% 
+  rename(iv_abx = name,
+         iv_abx_start = day)
+
+iv_abx_end <- iv %>% 
+  filter(name == "★スルバシリン静注用 1.5g/瓶" |
+           name == "セフメタゾールﾅﾄﾘｳﾑ静注用1g/瓶(ｾﾌﾒﾀｿﾞﾝ)"|
+           name == "セフトリアキソンﾅﾄﾘｳﾑ静注用 1g/瓶"|
+           name == "セファゾリンﾅﾄﾘｳﾑ注射用 1g/瓶(ｾﾌｧﾒｼﾞﾝ)"|
+           name == "ダラシンＳ注射液 600mg/4mL/管"|
+           name == "注射用ビクシリン 1g/瓶"|
+           name == "ｼﾌﾟﾛﾌﾛｷｻｼﾝ点滴静注 300mg/150mL/袋"|
+           name == "メロペネム点滴静注用｢明治｣ 0.5g/瓶"|
+           name == "セフトリアキソンﾅﾄﾘｳﾑ静注用　1g/瓶"|
+           name == "タゾピペ配合静注用【2.25g/瓶】(ｿﾞｼﾝ)"|
+           name == "ｸﾘﾝﾀﾞﾏｲｼﾝﾘﾝ酸ｴｽﾃﾙ注射液600mg/4mL(ﾀﾞﾗｼﾝ)"|
+           name == "注射用ビクシリン　1g/瓶"|
+           name == "メロペネム点滴静注用｢明治｣　0.5g/瓶"|
+           name == "バクトラミン注　5mL/管"|
+           name == "ダラシンＳ注射液　600mg/4mL/管"|
+           name == "ジスロマック点滴静注用500mg"|
+           name == "タゾピペ配合静注用【4.5g/瓶】(ｿﾞｼﾝ)"|
+           name == "セフォタックス注射用　1g/瓶"|
+           name == "バンコマイシン注「MEEK」　500mg/瓶"|
+           name == "《胸腔内》ﾐﾉｻｲｸﾘﾝ塩酸塩注100mg/瓶"|
+           name == "ゾシン静注用【4.5g/瓶】"|
+           name == "セフメタゾン静注用　1g/瓶"|
+           name == "セフォセフ静注用　1g/瓶（SBT/CPZ）"|
+           name == "ペントシリン注射用　2g/瓶"|
+           name == "セフトリアキソンﾅﾄﾘｳﾑ静注用1g"|
+           name == "ゾシン静注用【2.25g/瓶】"|
+           name == "ｼﾌﾟﾛﾌﾛｷｻｼﾝ点滴静注　300mg/150mL/袋"|
+           name == "セフォセフ静注用　1g/瓶"|
+           name == "注射用ペニシリンＧｶﾘｳﾑ　100万単位/瓶"|
+           name == "注射用マキシピーム　1g/瓶") %>% 
+  arrange(id, adm_date, desc(day)) %>% 
+  distinct(id, adm_date, name, .keep_all=TRUE) %>% 
+  rename(iv_abx = name,
+         iv_abx_end = day)
+
+iv_abx <- left_join(iv_abx_start, iv_abx_end, by = c("id", "adm_date", "iv_abx")) %>% 
+  select(id, adm_date, iv_abx, iv_abx_start, iv_abx_end) %>% 
+  mutate(iv_abx_start = as.Date(iv_abx_start),
+         iv_abx_end = as.Date(iv_abx_end))
+
+iv_abx <- iv_abx %>% 
+  group_by(id, adm_date) %>% 
+  summarise(iv_abx_all_names = paste0(iv_abx,
+                               collapse = "_"),
+            iv_abx_all_day = paste0(iv_abx_start,
+                             iv_abx_end,
+                             collapse = "_")) %>% 
+  ungroup(id, adm_date) 
+
+complete <- left_join(complete, iv_abx, by=c("id", "adm_date"))
 
 uk <- iv %>% 
   filter(name == "《胸腔内》★★ｳﾛﾅｰｾﾞ静注用 6万単位/瓶"|
@@ -212,7 +297,7 @@ select_lab <- function(lab_name, new_name){
     distinct(id, adm_date, .keep_all=TRUE) %>%  
     select(-label, -name, -date)
   names(lab)[which(names(lab)=="value" ) ] <- new_name
-  lab_combine <<- left_join(lab_combine, lab, key = c("id", "adm"))
+  lab_combine <<- left_join(lab_combine, lab, key = c("id", "adm_date"))
 }
 
 select_lab("白血球数", "blood_wbc")
@@ -242,7 +327,11 @@ lab_combine %>% glimpse()
 lab_combine <- lab_combine %>% 
   mutate(blood_wbc = as.character(as.numeric(blood_wbc)*1000)) 
 
+complete <- left_join(complete, lab_combine, by=c("id", "adm_date"))
+
 lab_combine %>% write.csv("data/kumamoto/cleaned/lab.csv")
+
+complete %>% write.csv("data/kumamoto/cleaned/kumamoto.csv")
 
 # Culture -----------------------------------------------------------------
 
