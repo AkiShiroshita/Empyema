@@ -1,13 +1,18 @@
 
 # Import data -------------------------------------------------------------
 
-dpcdwh <- read_csv("data/kobe/uncleaned/kobe.csv",
-                   locale = locale(encoding = "SHIFT-JIS"))
+dpc1 <- read_csv("data/kobe/uncleaned/dpc1.csv",
+                   locale = locale(encoding = "UTF-8"))
 chart <- read_excel("data/kobe/uncleaned/chart.xlsx",
                     sheet = "Sheet1")
-lab <- read_excel("data/kobe/uncleaned/lab.xlsx")
-ef <- read_excel("data/kobe/uncleaned/ef.xlsx")
 yoshiki1 <- read_excel("data/kobe/uncleaned/yoshiki1.xlsx")
+lab1 <- read_csv("data/kobe/uncleaned/lab1.csv")
+lab2 <- read_csv("data/kobe/uncleaned/lab2.csv")
+lab3 <- read_csv("data/kobe/uncleaned/lab3.csv")
+vital1 <- read_csv("data/kobe/uncleaned/vital1.csv")
+vital2 <- read_csv("data/kobe/uncleaned/vital2.csv")
+ef1 <- read_csv("data/kobe/uncleaned/ef1.csv")
+ef2 <- read_csv("data/kobe/uncleaned/ef2.csv")
 culture <- read_excel("data/kobe/uncleaned/culture.xlsx")
 
 # Chart -------------------------------------------------------------------
@@ -17,9 +22,9 @@ chart %>% colnames()
 chart <- chart %>% 
   filter(電子カルテでの膿胸の診断 == "膿胸") %>% 
   mutate(hospid = 4) %>% 
-  rename(id = "研究用ID")
+  rename(id = "ID")
 chart <- chart %>% 
-  select(1:20) %>% 
+  select(1:20, 30) %>% 
   rename(adm_date = "入院年月日",
          dev_place = "発症場所",
          diag_date = "膿胸診断日（推定）",
@@ -53,7 +58,7 @@ chart <- chart %>%
          pleural_look = case_when(pleural_look == "膿性ではない" ~ "0",
                                   pleural_look == "膿性" ~ "1",
                                   pleural_look == "不明" ~ "2")) %>% 
-  select(-"データ入力者", -"電子カルテでの膿胸の診断", -ID)
+  select(-"データ入力者", -"電子カルテでの膿胸の診断", -"研究用ID")
 
 key <- chart %>% 
   select(id, adm_date, diag_date)
@@ -61,9 +66,14 @@ key <- chart %>%
 screen <- str_c(key$id, collapse = "|") # for selecting variables
 
 chart %>% write.csv("data/kobe/cleaned/chart.csv")
+key %>% 
+  select(id, adm_date) %>% 
+  write.csv("data/kobe/cleaned/対象患者.csv")
 
 # DPC ---------------------------------------------------------------------
 
+dpc1 %>% glimpse()
+dpc1 %>% colnames()
 yoshiki1 %>% glimpse()
 yoshiki1 %>% colnames()
 
@@ -126,6 +136,8 @@ yoshiki1_select2("A006050", "ddev", "ペイロード2")
 yoshiki1_select("ADL0010", "adm_adl", "ペイロード2")
 yoshiki1_select("ADL0020", "disc_adl", "ペイロード2")
 yoshiki1_select("M040010", "hughjones", "ペイロード2")
+yoshiki1_select("JCS0010", "adm_jcs", "ペイロード2")
+yoshiki1_select("JCS0020", "disc_jcs", "ペイロード2")
 
 yoshiki1_select2("A007010", "opek", "ペイロード2")
 yoshiki1_select2("A007010", "openm", "ペイロード9")
@@ -134,31 +146,57 @@ yoshiki1_select2("A007010", "opedt", "ペイロード1")
 dpc <- dpc %>% 
   select(-diag_date)
 
+dpc$adm_adl <- sapply(strsplit(dpc$adm_adl,""), function(x) sum(as.numeric(x))) 
+dpc$disc_adl <- sapply(strsplit(dpc$disc_adl,""), function(x) sum(as.numeric(x))) 
+
 complete <- left_join(chart, dpc, by = c("id", "adm_date"))
 dpc %>% write.csv("data/kobe/cleaned/dpc.csv")
 
 # Lab ---------------------------------------------------------------------
 
-lab %>% glimpse()
-lab %>% colnames()
+lab1 %>% glimpse()
+lab1 %>% colnames()
+
+lab2 %>% glimpse()
+lab2 %>% colnames()
+
+lab3 %>% glimpse()
+lab3 %>% colnames()
+lab3 <- lab3 %>% 
+  select(-adm_date)
+
+lab <- bind_rows(lab1, lab2)
+lab <- bind_rows(lab, lab3)
 
 lab <- lab %>% 
   rename(id = "研究用ID",
-         adm_date = "入院日",
          date = "検査日",
-         name = "検査項目名称",
-         value = "結果値") %>% 
+         name = "検査名",
+         value = "検査値") %>% 
   mutate(date = as.Date(date)) %>% 
-  select(id, adm_date, date, name, value)
+  select(id, date, name, value)
+
+lab <- lab %>% 
+  drop_na() 
 
 lab_total <- lab %>% 
   filter(str_detect(id, screen))
 
-lab_key <- lab_combine <- key
+lab_total %>% write.csv("data/kobe/uncleaned/lab_total.csv")
+
+lab_total <- read_csv("data/kobe/uncleaned/lab_total_update.csv", 
+                      locale = locale(encoding = "SHIFT-JIS"))
+
+lab_total <- lab_total %>% 
+  mutate(date = as.Date(date)) %>% 
+  arrange(id, date)
+
+lab_key <- lab_combine <- key %>% 
+  arrange(id, diag_date)
 
 select_lab <- function(lab_name, new_name){
   lab <- lab_total %>% 
-    filter(name == lab_name)
+    filter(name == lab_name) 
   index1 <- neardate(lab_key$id,
                      lab$id,
                      lab_key$diag_date,
@@ -176,7 +214,7 @@ select_lab <- function(lab_name, new_name){
                                    abs(ymd(lab$date[index1])- ymd(lab_key$diag_date)), index2, index1)))
   lab <- lab[index3, ]
   lab <- lab %>% filter(!is.na(value)) %>% 
-    distinct(id, adm_date, .keep_all=TRUE) %>%  
+    distinct(id, date, .keep_all=TRUE) %>%  
     select(-name, -date)
   names(lab)[which(names(lab)=="value" ) ] <- new_name
   lab_combine <<- left_join(lab_combine, lab, key = c("id", "adm_date"))
@@ -190,6 +228,7 @@ select_lab("総蛋白", "blood_tp")
 select_lab("アルブミン", "blood_alb")
 select_lab("ＬＤ", "blood_ldh")
 select_lab("尿素窒素", "blood_bun")
+select_lab("尿素窒素－Ｅ", "blood_bun2")
 select_lab("クレアチニン", "blood_cre")
 select_lab("ＣＲＰ", "blood_crp")
 select_lab("ＡＬＰ" ,"blood_alp")
@@ -206,6 +245,7 @@ lab_combine <- lab_combine %>%
   select(-diag_date)
 
 complete <- left_join(complete, lab_combine, by = c("id", "adm_date"))
+
 lab_combine %>% write.csv("data/kobe/cleaned/lab.csv")
 
 # Culture -----------------------------------------------------------------
@@ -230,18 +270,26 @@ culture %>% write.csv("data/kobe/cleaned/culture.csv")
 
 # Procedure ---------------------------------------------------------------
 
-ef %>% glimpse()
-ef %>% colnames()
+ef1 %>% glimpse()
+ef1 %>% colnames()
+ef2 %>% glimpse()
+ef2 %>% colnames()
+
+ef <- bind_rows(ef1, ef2)
 
 ef <- ef %>% 
   rename(id = "研究用ID",
-         adm_date = "入院日",
          date = "実施年月日",
-         name = "レセプト電算処理システム用コード") %>% 
-  select(id, adm_date, date, name)
+         ef = "病院点数マスタコード",
+         name = "診療明細名称") %>% 
+  mutate(adm_date = as.Date(adm_date),
+         id = as.numeric(id)) %>% 
+  select(id, adm_date, date, ef, name)
 
 ef_total <- ef %>% 
   filter(str_detect(id, screen))
+
+ef_total %>% write.csv("data/kobe/uncleaned/ef_total.csv")
 
 ef_combine <- key %>% 
   mutate(adm_date = ymd(adm_date))
@@ -251,13 +299,13 @@ ef_key <- chart %>%
 
 select_ef <- function(ef_name, new_name){
   ef_demo <- ef_total %>% 
-    filter(name == ef_name)
+    filter(ef == ef_name)
   start <- ef_demo %>% 
-    arrange(adm_date) %>% 
+    arrange(adm_date, date) %>% 
     distinct(id, adm_date, .keep_all=TRUE) %>% 
     rename(start = "date")
   end <- ef_demo %>% 
-    arrange(desc(adm_date)) %>% 
+    arrange(adm_date, desc(date)) %>% 
     distinct(id, adm_date, .keep_all=TRUE) %>% 
     rename(end = "date")
   var1 <- paste(new_name, "start", sep = "_")
@@ -272,11 +320,11 @@ select_ef <- function(ef_name, new_name){
   ef_combine <<- left_join(ef_combine, data, key = c("id", "adm_date"))
 }
 
-select_ef("140004110", "drainage")
-select_ef("140032310", "drainage2")
+select_ef("410078", "drainage")
+select_ef("410105", "drainage2")
 
 ef_combine %>% glimpse()
 
-complete <- left_join(complete, ef_combine, by = c("id", "adm_date"))
+complete <- left_join(complete, ef_combine, by = c("id", "adm_date")) 
 
 complete %>% write.csv("data/kobe/cleaned/kobe.csv")
