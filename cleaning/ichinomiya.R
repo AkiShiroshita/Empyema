@@ -274,13 +274,14 @@ dpc$disc_adl <- sapply(strsplit(dpc$disc_adl,""), function(x) sum(as.numeric(x))
 
 dpc <- dpc %>% 
   select(-starts_with("non")) %>% 
+  mutate(disc_date = ymd(as.numeric(diag_date) - as.numeric(age))) # peudo_birth_date
   separate(icd_all,
            into = c("dmain", "dadm", "dres", "dcom1", "dcom2", "dcom3", "dcom4", "dcom5", "dcom6", "dcom7", "dcom8", "dcom9"),
            sep = "_",
            remove = "FALSE")
 # Please note we cannot distinguish "ddev" from "dcom"
 
-complete <- left_join(key, dpc, by=c("id", "adm_date"))
+complete <- left_join(chart, dpc, by=c("id", "adm_date"))
 
 screen <- str_c(dpc$id, collapse = "|") # for selecting variables
 
@@ -595,7 +596,8 @@ lab_combine <- lab_combine %>%
   select(-diag_date) %>% 
   distinct(id, adm_date, .keep_all = TRUE)
 
-complete <- left_join(complete, lab_combine, by=c("id", "adm_date"))
+complete <- left_join(complete, lab_combine, by=c("id", "adm_date")) %>% 
+  mutate(hospid = 1)
 
 lab_combine %>% write.csv("data/ichinomiya/cleaned/lab.csv")
 complete %>% write.csv("data/ichinomiya/cleaned/ichinomiya.csv")
